@@ -12,7 +12,7 @@ const MAX_LONG_DELAY_SECONDS = 15;
 const LONG_DELAY_PROBABILITY = 0.1; // chance of longer delay
 
 // Error probability configuration
-const ERROR_PROBABILITY = 0.5;
+const ERROR_PROBABILITY = 0.3;
 
 @Injectable()
 export class RandomDelayErrorMiddleware implements NestMiddleware {
