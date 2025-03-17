@@ -1,0 +1,819 @@
+openapi: 3.0.0
+info:
+  title: Schedule and Routes Management API
+  version: "1.0.1"
+  description: |
+    API для управління маршрутами та розкладами річкового транспорту.
+    Операції, що змінюють дані, доступні лише для користувача з роллю ADMIN.
+servers:
+  - url: https://api.example.com/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Route:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "abc123"
+        name:
+          type: string
+          example: "Маршрут A"
+        startLocation:
+          type: string
+          example: "Порт 1"
+        endLocation:
+          type: string
+          example: "Порт 2"
+        distance:
+          type: number
+          format: float
+          example: 15.5
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-03-16T09:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-03-16T09:30:00Z"
+      required:
+        - name
+        - startLocation
+        - endLocation
+        - distance
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sch001"
+        routeId:
+          type: string
+          example: "abc123"
+        boatId:
+          type: string
+          example: "boat777"
+        departureTime:
+          type: string
+          format: date-time
+          example: "2025-03-20T08:00:00Z"
+        arrivalTime:
+          type: string
+          format: date-time
+          example: "2025-03-20T10:00:00Z"
+        status:
+          type: string
+          enum:
+            - scheduled
+            - cancelled
+            - completed
+          example: "scheduled"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-03-16T09:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-03-16T09:30:00Z"
+      required:
+        - routeId
+        - departureTime
+        - arrivalTime
+        - status
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      example:
+        message: "Bad Request - invalid input parameters"
+paths:
+  /routes:
+    get:
+      tags:
+        - Routes
+      summary: Отримання списку маршрутів
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Номер сторінки для пагінації
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Кількість записів на сторінку
+      responses:
+        "200":
+          description: Успішне отримання списку маршрутів
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  routes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Route"
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "500":
+          description: Internal Server Error - несподівана помилка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Internal Server Error - unexpected error occurred"
+    post:
+      tags:
+        - Routes
+      summary: Створення нового маршруту
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/Route"
+              example:
+                name: "Маршрут A"
+                startLocation: "Порт 1"
+                endLocation: "Порт 2"
+                distance: 15.5
+      responses:
+        "201":
+          description: Маршрут успішно створено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+        "400":
+          description: Bad Request - некоректні дані запиту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid input data"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "500":
+          description: Internal Server Error - несподівана помилка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Internal Server Error - unexpected error occurred"
+  /routes/{routeId}:
+    get:
+      tags:
+        - Routes
+      summary: Отримання детальної інформації про маршрут
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+          description: Унікальний ідентифікатор маршруту
+      responses:
+        "200":
+          description: Успішне отримання інформації про маршрут
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+        "400":
+          description: Bad Request - некоректний формат routeId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid routeId format"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "404":
+          description: Not Found - маршрут не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - route not found"
+    put:
+      tags:
+        - Routes
+      summary: Повне оновлення інформації про маршрут
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN. Усі поля маршруту мають бути передані.
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор маршруту
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Оновлений маршрут A"
+                startLocation:
+                  type: string
+                  example: "Порт 1"
+                endLocation:
+                  type: string
+                  example: "Порт 2"
+                distance:
+                  type: number
+                  format: float
+                  example: 17.0
+              required:
+                - name
+                - startLocation
+                - endLocation
+                - distance
+      responses:
+        "200":
+          description: Маршрут успішно оновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Route"
+        "400":
+          description: Bad Request - некоректні дані запиту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid input data"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "404":
+          description: Not Found - маршрут не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - route not found"
+    delete:
+      tags:
+        - Routes
+      summary: Видалення маршруту
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN.
+      parameters:
+        - in: path
+          name: routeId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор маршруту
+      responses:
+        "204":
+          description: Маршрут успішно видалено (відповідь без тіла)
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "404":
+          description: Not Found - маршрут не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - route not found"
+  /schedules:
+    get:
+      tags:
+        - Schedules
+      summary: Отримання списку розкладів
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Фільтр за датою відправлення (YYYY-MM-DD)
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Номер сторінки
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Кількість записів на сторінку
+      responses:
+        "200":
+          description: Успішне отримання списку розкладів
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schedules:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Schedule"
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "500":
+          description: Internal Server Error - несподівана помилка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Internal Server Error - unexpected error occurred"
+    post:
+      tags:
+        - Schedules
+      summary: Створення нового розкладу
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN. Розклад створюється для існуючого маршруту.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                routeId:
+                  type: string
+                  example: "abc123"
+                boatId:
+                  type: string
+                  example: "boat777"
+                departureTime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-20T08:00:00Z"
+                arrivalTime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-20T10:00:00Z"
+                status:
+                  type: string
+                  enum:
+                    - scheduled
+                    - cancelled
+                    - completed
+                  example: "scheduled"
+              required:
+                - routeId
+                - departureTime
+                - arrivalTime
+                - status
+      responses:
+        "201":
+          description: Розклад успішно створено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          description: Bad Request - некоректні дані запиту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid input data"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "500":
+          description: Internal Server Error - несподівана помилка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Internal Server Error - unexpected error occurred"
+  /schedules/{scheduleId}:
+    get:
+      tags:
+        - Schedules
+      summary: Отримання детальної інформації про розклад
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: scheduleId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор розкладу
+      responses:
+        "200":
+          description: Успішне отримання інформації про розклад
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "404":
+          description: Not Found - розклад не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - schedule not found"
+    put:
+      tags:
+        - Schedules
+      summary: Повне оновлення розкладу
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN. Усі поля розкладу мають бути передані.
+      parameters:
+        - in: path
+          name: scheduleId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор розкладу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                routeId:
+                  type: string
+                  example: "abc123"
+                boatId:
+                  type: string
+                  example: "boat777"
+                departureTime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-20T08:00:00Z"
+                arrivalTime:
+                  type: string
+                  format: date-time
+                  example: "2025-03-20T10:00:00Z"
+                status:
+                  type: string
+                  enum:
+                    - scheduled
+                    - cancelled
+                    - completed
+                  example: "scheduled"
+              required:
+                - routeId
+                - departureTime
+                - arrivalTime
+                - status
+      responses:
+        "200":
+          description: Розклад успішно оновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          description: Bad Request - некоректні дані запиту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid input data"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "404":
+          description: Not Found - розклад не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - schedule not found"
+    delete:
+      tags:
+        - Schedules
+      summary: Видалення розкладу
+      security:
+        - bearerAuth: []
+      description: Доступ має лише ADMIN.
+      parameters:
+        - in: path
+          name: scheduleId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор розкладу
+      responses:
+        "204":
+          description: Розклад успішно видалено (відповідь без тіла)
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "404":
+          description: Not Found - розклад не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - schedule not found"
+  /schedules/{scheduleId}/status:
+    patch:
+      tags:
+        - Schedules
+      summary: Часткове оновлення статусу розкладу
+      security:
+        - bearerAuth: []
+      description: Дозволяє оновити лише поле status. Доступ має лише ADMIN.
+      parameters:
+        - in: path
+          name: scheduleId
+          required: true
+          schema:
+            type: string
+          description: Ідентифікатор розкладу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - scheduled
+                    - cancelled
+                    - completed
+                  example: "scheduled"
+              required:
+                - status
+      responses:
+        "200":
+          description: Статус розкладу успішно оновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          description: Bad Request - некоректні дані запиту
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Bad Request - invalid input data"
+        "401":
+          description: Unauthorized - відсутній або недійсний токен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Unauthorized - missing or invalid token"
+        "403":
+          description: Forbidden - доступ заборонено (не ADMIN)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Forbidden - insufficient privileges"
+        "404":
+          description: Not Found - розклад не знайдено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                error:
+                  value:
+                    message: "Not Found - schedule not found"
+security:
+  - bearerAuth: []
