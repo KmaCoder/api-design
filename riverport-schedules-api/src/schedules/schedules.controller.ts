@@ -26,12 +26,8 @@ export class SchedulesController {
   @ApiResponse({ status: 200, description: 'Успішне отримання списку розкладів', type: ScheduleDto, isArray: true })
   @ApiResponse({ status: 401, description: 'Unauthorized - відсутній або недійсний токен', type: ErrorResponseDto })
   @ApiResponse({ status: 500, description: 'Internal Server Error - несподівана помилка', type: ErrorResponseDto })
-  async findAll(
-    @Query('date') date?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    return this.schedulesService.findAll(date, page, limit);
+  async findAll() {
+    return this.schedulesService.findAll();
   }
 
   @Post()

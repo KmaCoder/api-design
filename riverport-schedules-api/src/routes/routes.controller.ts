@@ -21,11 +21,8 @@ export class RoutesController {
   @ApiResponse({ status: 200, description: 'Успішне отримання списку маршрутів', type: RouteDto, isArray: true })
   @ApiResponse({ status: 401, description: 'Unauthorized - відсутній або недійсний токен', type: ErrorResponseDto })
   @ApiResponse({ status: 500, description: 'Internal Server Error - несподівана помилка', type: ErrorResponseDto })
-  async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    return this.routesService.findAll(page, limit);
+  async findAll() {
+    return this.routesService.findAll();
   }
 
   @Post()

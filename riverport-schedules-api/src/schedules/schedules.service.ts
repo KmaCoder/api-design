@@ -1,60 +1,79 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
 import { RoutesService } from '../routes/routes.service';
-import { Schedule } from './entities/schedule.entity';
 import {
   CreateScheduleDto,
   UpdateScheduleDto,
   UpdateScheduleStatusDto,
   ScheduleStatus,
+  ScheduleDto,
 } from './dto/schedule.dto';
+
+let schedules: ScheduleDto[] = [
+  {
+    id: '1',
+    routeId: '1',
+    boatId: '1',
+    departureTime: '2021-01-01T00:00:00.000Z',
+    arrivalTime: '2021-01-01T00:00:00.000Z',
+    createdAt: '2021-01-01T00:00:00.000Z',
+    updatedAt: '2021-01-01T00:00:00.000Z',
+    status: ScheduleStatus.SCHEDULED,
+  },
+  {
+    id: '2',
+    routeId: '2',
+    boatId: '2',
+    departureTime: '2021-01-01T00:00:00.000Z',
+    arrivalTime: '2021-01-01T00:00:00.000Z',
+    createdAt: '2021-01-02T00:00:00.000Z',
+    updatedAt: '2021-01-02T00:00:00.000Z',
+    status: ScheduleStatus.SCHEDULED,
+  },
+
+  {
+    id: '3',
+    routeId: '3',
+    boatId: '3',
+    departureTime: '2021-01-01T00:00:00.000Z',
+    arrivalTime: '2021-01-01T00:00:00.000Z',
+    createdAt: '2021-01-03T00:00:00.000Z',
+    updatedAt: '2021-01-03T00:00:00.000Z',
+    status: ScheduleStatus.SCHEDULED,
+  },
+  {
+    id: '4',
+    routeId: '4',
+    boatId: '4',
+    departureTime: '2021-01-01T00:00:00.000Z',
+    arrivalTime: '2021-01-01T00:00:00.000Z',
+    createdAt: '2021-01-04T00:00:00.000Z',
+    updatedAt: '2021-01-04T00:00:00.000Z',
+    status: ScheduleStatus.SCHEDULED,
+  },
+  {
+    id: '5',
+    routeId: '5',
+    boatId: '5',
+    departureTime: '2021-01-01T00:00:00.000Z',
+    arrivalTime: '2021-01-01T00:00:00.000Z',
+    createdAt: '2021-01-05T00:00:00.000Z',
+    updatedAt: '2021-01-05T00:00:00.000Z',
+    status: ScheduleStatus.SCHEDULED,
+  },
+];
 
 @Injectable()
 export class SchedulesService {
   constructor(
-    @InjectRepository(Schedule)
-    private schedulesRepository: Repository<Schedule>,
     private readonly routesService: RoutesService,
   ) {}
 
-  async findAll(date?: string, page = 1, limit = 10) {
-    const queryBuilder = this.schedulesRepository.createQueryBuilder('schedule')
-      .leftJoinAndSelect('schedule.route', 'route')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .orderBy('schedule.departureTime', 'ASC');
-
-    if (date) {
-      const startDate = new Date(date);
-      startDate.setHours(0, 0, 0, 0);
-      
-      const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999);
-
-      queryBuilder.andWhere('schedule.departureTime BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
-    }
-
-    const [schedules, total] = await queryBuilder.getManyAndCount();
-
-    return {
-      schedules,
-      pagination: {
-        page,
-        limit,
-        total,
-      },
-    };
+  async findAll() {
+    return schedules;
   }
 
-  async findOne(id: string): Promise<Schedule> {
-    const schedule = await this.schedulesRepository.findOne({
-      where: { id },
-      relations: ['route'],
-    });
+  async findOne(id: string): Promise<ScheduleDto> {
+    const schedule = schedules.find(schedule => schedule.id === id);
 
     if (!schedule) {
       throw new NotFoundException('Schedule not found');
@@ -63,44 +82,61 @@ export class SchedulesService {
     return schedule;
   }
 
-  async create(createScheduleDto: CreateScheduleDto): Promise<Schedule> {
-    // Verify that the route exists
-    await this.routesService.findOne(createScheduleDto.routeId);
+  async create(createScheduleDto: CreateScheduleDto): Promise<ScheduleDto> {
+    const lastSchedule = schedules[schedules.length - 1];
+    const newId = lastSchedule ? (Number(lastSchedule.id) + 1).toString() : '1';
 
-    const schedule = this.schedulesRepository.create(createScheduleDto);
-    return await this.schedulesRepository.save(schedule);
+    const newSchedule = {
+      ...createScheduleDto,
+      id: newId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    schedules.push(newSchedule);
+
+    return newSchedule;
   }
 
-  async update(id: string, updateScheduleDto: UpdateScheduleDto): Promise<Schedule> {
-    const schedule = await this.findOne(id);
+  async update(id: string, updateScheduleDto: UpdateScheduleDto): Promise<ScheduleDto> {
+    const schedule = schedules.find(schedule => schedule.id === id);
 
-    // Verify that the route exists if routeId is being updated
-    if (updateScheduleDto.routeId) {
-      await this.routesService.findOne(updateScheduleDto.routeId);
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
     }
 
-    Object.assign(schedule, updateScheduleDto);
-    return await this.schedulesRepository.save(schedule);
+    schedule.status = updateScheduleDto.status;
+    schedule.updatedAt = new Date().toISOString();
+
+    return schedule;
   }
 
-  async updateStatus(id: string, updateStatusDto: UpdateScheduleStatusDto): Promise<Schedule> {
-    const schedule = await this.findOne(id);
+  async updateStatus(id: string, updateStatusDto: UpdateScheduleStatusDto): Promise<ScheduleDto> {
+    const schedule = schedules.find(schedule => schedule.id === id);
     
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
+    }
+
     // Validate status transition
     if (!this.isValidStatusTransition(schedule.status, updateStatusDto.status)) {
       throw new BadRequestException('Invalid status transition');
     }
 
     schedule.status = updateStatusDto.status;
-    return await this.schedulesRepository.save(schedule);
+    schedule.updatedAt = new Date().toISOString();
+
+    return schedule;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.schedulesRepository.delete(id);
-    
-    if (result.affected === 0) {
+    const index = schedules.findIndex(schedule => schedule.id === id);
+
+    if (index === -1) {
       throw new NotFoundException('Schedule not found');
     }
+
+    schedules.splice(index, 1);
   }
 
   private isValidStatusTransition(currentStatus: ScheduleStatus, newStatus: ScheduleStatus): boolean {
