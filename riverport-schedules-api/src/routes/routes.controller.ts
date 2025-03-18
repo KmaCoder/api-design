@@ -12,7 +12,7 @@ import { ErrorResponseDto } from '../common/dto/error-response.dto';
 @Controller('routes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.USER, Role.ADMIN) // Default access for all endpoints
+@Roles(Role.USER, Role.ADMIN)
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 
