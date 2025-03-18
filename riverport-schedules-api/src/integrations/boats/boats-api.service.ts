@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BoatDto } from '../mock-boats/dto/boat.dto';
+import { BoatDto } from '../../mock-boats/dto/boat.dto';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 

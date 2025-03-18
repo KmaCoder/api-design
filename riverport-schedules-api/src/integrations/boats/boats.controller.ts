@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Put, Body, HttpException, HttpStatus, Logger, Patch, UseGuards } from '@nestjs/common';
-import { BoatDto } from '../mock-boats/dto/boat.dto';
+import { BoatDto } from '../../mock-boats/dto/boat.dto';
 import { BoatsService } from './boats.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';

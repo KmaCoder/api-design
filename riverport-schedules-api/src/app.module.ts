@@ -4,7 +4,7 @@ import { RoutesModule } from './routes/routes.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
-import { BoatsModule } from './boats/boats.module';
+import { BoatsModule } from './integrations/boats/boats.module';
 import { MockBoatsModule } from './mock-boats/mock-boats.module';
 import { RandomDelayErrorMiddleware } from './common/middleware/random-delay-error.middleware';
 
