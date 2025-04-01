@@ -36,6 +36,12 @@ async function bootstrap() {
     }
   }));
   
+  app.enableCors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  });
+  
   // Apply our error response interceptor globally
   app.useGlobalInterceptors(new ErrorResponseInterceptor());
   

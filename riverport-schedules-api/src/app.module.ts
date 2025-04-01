@@ -25,7 +25,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RandomDelayErrorMiddleware)
-      .exclude('health', 'third-party/boats', 'integrations/boats')
-      .forRoutes('*');
+      .forRoutes('routes', 'schedules');
   }
 } 

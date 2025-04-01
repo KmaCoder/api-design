@@ -3,16 +3,16 @@ import { Request, Response, NextFunction } from 'express';
 import { Logger } from '@nestjs/common';
 
 // Constants for delay configuration
-const MIN_SHORT_DELAY_SECONDS = 0.5;
-const MAX_SHORT_DELAY_SECONDS = 2;
+const MIN_SHORT_DELAY_SECONDS = 0.1;
+const MAX_SHORT_DELAY_SECONDS = 0.2;
 
 const MIN_LONG_DELAY_SECONDS = 10;
 const MAX_LONG_DELAY_SECONDS = 15;
 
-const LONG_DELAY_PROBABILITY = 0.1; // chance of longer delay
+const LONG_DELAY_PROBABILITY = 0; // chance of longer delay
 
 // Error probability configuration
-const ERROR_PROBABILITY = 0.3;
+const ERROR_PROBABILITY = 0;
 
 @Injectable()
 export class RandomDelayErrorMiddleware implements NestMiddleware {

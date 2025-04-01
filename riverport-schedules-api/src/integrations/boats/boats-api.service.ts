@@ -23,8 +23,9 @@ export class BoatsApiService {
       },
       retryCondition: (error) => {
         return (
-          axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-          (error.response && error.response.status >= 500)
+          axiosRetry.isNetworkError(error) ||
+          axiosRetry.isIdempotentRequestError(error) ||
+          error.response?.status >= 500
         );
       },
     });
@@ -44,4 +45,4 @@ export class BoatsApiService {
     const response = await this.apiClient.put(`${this.baseUrl}/${id}`, updateData);
     return response.data;
   }
-} 
+}
